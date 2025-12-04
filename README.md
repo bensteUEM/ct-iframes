@@ -1,6 +1,6 @@
-# CT Events Load Extension
+# CT IFrames Extension
 
-This project visualizes event load for services.
+This extension provides additional iframes which can be used to embed churchtools information into restricted websites e.g. https://www.gemeindebaukasten.de/ used in ELKW.
 
 ## Getting Started
 

@@ -11,23 +11,36 @@ export async function generateEventList(): Promise<HTMLDivElement> {
     if (events.length === 0) {
         content.innerHTML = "<p>No upcoming events.</p>";
     } else {
+        // Helper function to truncate time
+        const truncateTime = (date: Date): Date => {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        };
         // Use eventName property of each event
-        const dates = events.map(event => new Date(String(event.startDate)));
-        const uniqueDates = Array.from(new Set(dates));
 
-        console.log("Event Dates:", uniqueDates);
+        // Get unique dates
+        const uniqueDates = Array.from(
+            new Set(events.map(event => truncateTime(new Date(String(event.startDate))).getTime()))
+        ).map(time => new Date(time));
+
+        //console.log("Event Dates:", uniqueDates);
 
         for (let date of uniqueDates) {
+            // filter date to each iteration
+            const eventsForDate = events.filter(event => {
+                const eventDate = new Date(String(event.startDate));
+                return truncateTime(eventDate).getTime() === date.getTime();
+            });
+
+            // create header for each date
             const dateHeader = document.createElement("h3");
             dateHeader.textContent = date.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' });
             content.appendChild(dateHeader);
 
-            const eventsForDate = events.filter(event => {
-                const eventDate = new Date(String(event.startDate));
-                return eventDate.toDateString() === date.toDateString();
-            });
-            const ul = document.createElement("ul");
 
+            console.log(`Events for ${date.toDateString()}:`, eventsForDate);
+
+            // create a list for each date
+            const ul = document.createElement("ul");
             for (let event of eventsForDate) {
                 const li = document.createElement("li");
                 li.textContent = `${new Date(String(event.startDate)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${event.name}`;
@@ -44,9 +57,11 @@ export async function generateEventList(): Promise<HTMLDivElement> {
  * @param limit 
  * @returns list of events applicable to filter
  */
-async function getNextEvents(limit: number): Promise<Event[]> {
-    const events = await churchtoolsClient.get<Event[]>(`/events?direction=forward&limit=${limit}`);
+async function getNextEvents(limit: number = 5): Promise<Event[]> {
+    const events = await churchtoolsClient.get<Event[]>(`/events`);
 
-    console.log("Retrieved following events:", events);
-    return events;
+    let limitedEvents = events.slice(0, limit)
+
+    console.log("Retrieved following events:", limitedEvents);
+    return limitedEvents;
 }

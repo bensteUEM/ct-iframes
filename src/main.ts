@@ -30,9 +30,7 @@ export { KEY };
 
 /* end of initializiation */
 
-console.log("Fetching user info...");
 const user = await churchtoolsClient.get<Person>(`/whoami`);
-console.log("User info:", user);
 
 /** Main plugin function */
 async function main() {

@@ -41,20 +41,42 @@ async function main() {
     const app = document.querySelector<HTMLDivElement>("#app")!;
     app.innerHTML = `
 <div class="container d-flex flex-column align-items-center justify-content-start min-vh-100 gap-3">
-    <div id="explanation" class="p-4 mb-4 bg-gray-100 rounded shadow text-left" style="width: 100%; max-width: 800px;">
-    This extension provides additional iframes for embedding ChurchTools into pages with restricted access.
-    This applies e.g. to all pages using Gemeindebaukasten (ELKW) which do not allow custom plugins or JS code.
-    </br>
-    If you open this extension within ChurchTools it will show viewname, how it looks and additional explanation.
-    Using the embedded=true option in addition to a viewname the content from the black box can be displayed on its own. 
-    </br>
-    To ensure this works "Public User" needs to have permissions to view this plugin.
-    At present public access without login is problematic because of API permissions. See
-    <a href="https://github.com/bensteUEM/ct-iframes/issues/3">Github issue</a> for more details.
-    </div>
+
 </div>
 `;
     const container = app.querySelector(".container")!;
+
+    // explanation
+    if (!embedded) {
+        // Create explanation div
+        const explanation = document.createElement("div");
+
+        // Set id and classes
+        explanation.id = "explanation";
+        explanation.className = "p-4 mb-4 bg-gray-100 rounded shadow text-left";
+
+        // Set inner HTML
+        explanation.innerHTML = `
+            <p>
+                This extension provides additional iframes for embedding ChurchTools into pages with restricted access.
+                This applies, e.g., to all pages using Gemeindebaukasten (ELKW) which do not allow custom plugins or JS code.
+            </p>
+            <p>
+                If you open this extension within ChurchTools it will show the viewname, how it looks, and additional explanation.
+                Using the <code>embedded=true</code> option in addition to a viewname, the content from the black box can be displayed on its own.
+            </p>
+            <p>
+                To ensure this works, "Public User" needs to have permissions to view this plugin.
+                At present, public access without login is problematic because of API permissions. See 
+                <a href="https://github.com/bensteUEM/ct-iframes/issues/3" target="_blank" rel="noopener noreferrer">
+                Github issue
+                </a> for more details.
+            </p>
+            `;
+
+        // Append to container
+        container.appendChild(explanation);
+    }
 
     // event list
     if (params["view"] === "nextServicesWrapper" || !params["view"]) {
@@ -97,8 +119,7 @@ async function main() {
  */
 async function wrapExplanationDiv(view: HTMLDivElement, viewname: string): Promise<HTMLDivElement> {
     const wrapper = document.createElement("div");
-    wrapper.className = viewname;
-
+    wrapper.classList.add(viewname, "p-4", "mb-4", "bg-gray-100", "rounded", "shadow", "text-left");
 
     let viewHeader = document.createElement("h3")
     viewHeader.textContent = `View: ${viewname}`

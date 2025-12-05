@@ -1,18 +1,7 @@
-import type { Person, Event, Service } from "./utils/ct-types";
+import type { Person } from "./utils/ct-types";
 import { churchtoolsClient } from "@churchtools/churchtools-client";
-import { countServicesPerPerson, cummulativePersonTime } from "./math/counts";
+import { generateEventList } from "./events"
 
-import { createChartsHTML, getCTChartColors } from "./charts/charts.ts";
-import { renderStackedChart } from "./charts/stackedchart";
-import { renderLineChart } from "./charts/linechart";
-
-import {
-    createFilterHTML,
-    resetFilterOptions,
-    saveFilterOptions,
-    parseSelectedFilterOptions,
-} from "./filters";
-import { updateEventListHTML } from "./eventlist";
 // only import reset.css in development mode
 if (import.meta.env.MODE === "development") {
     //import("./utils/reset.css");
@@ -29,6 +18,9 @@ churchtoolsClient.setBaseUrl(baseUrl);
 
 const username = import.meta.env.VITE_USERNAME;
 const password = import.meta.env.VITE_PASSWORD;
+
+console.log(username, password);
+
 if (import.meta.env.MODE === "development" && username && password) {
     await churchtoolsClient.post("/login", { username, password });
 }
@@ -40,140 +32,67 @@ export { KEY };
 
 const user = await churchtoolsClient.get<Person>(`/whoami`);
 
-/** Fetch events in relevant timeframe from ChurchTools
- * @param relevantCalendars - list of calendar ids to filter
- * @param fromDate - start date to filter events
- * @param toDate - end date to filter events
- * @returns list of filtered events
- */
-async function getEvents(
-    relevantCalendars: number[],
-    fromDate: Date = new Date(),
-    toDate: Date = new Date(new Date().setMonth(new Date().getMonth() + 6)),
-): Promise<Event[]> {
-    console.log("Fetching events for calendars:", relevantCalendars);
-    // Fetch all events
-    const allEvents: Event[] = await churchtoolsClient.get("/events", {
-        from: fromDate.toISOString().split("T")[0],
-        to: toDate.toISOString().split("T")[0],
-        include: "eventServices",
-    });
-
-    // Filter calendar and daterange sort by startDate j
-    const calendarEvents = allEvents.filter((event) => {
-        if (!event.startDate) return;
-        const eventDate = new Date(event.startDate);
-        return (
-            relevantCalendars.some(
-                // @ts-expect-error TS2339
-                (id) => id == event?.calendar?.domainIdentifier,
-            ) &&
-            eventDate >= fromDate &&
-            eventDate <= toDate
-        );
-    });
-
-    console.log("Events:", calendarEvents);
-
-    return calendarEvents;
-}
-
-/**
- * Fetch fetchServicesDict
- *
- * @returns dict of serviceId and ServiceObject
- */ async function getServicesDict(): Promise<Record<number, Service>> {
-    const services: Service[] = await churchtoolsClient.get("/services");
-    const servicesDict = Object.fromEntries(
-        services
-            .filter((service) => service.id != null)
-            .map((service) => [service.id!, service]),
-    ) as Record<number, Service>;
-    return servicesDict;
-}
-
-/**
- * Wrapper to apply new filter options
- * @returns void
- */
-async function submitFilterOptions(document: Document = window.document) {
-    /* retrieve filter option selectedCalendars from HTML form */
-    const selectedFilters = await parseSelectedFilterOptions(document);
-
-    // data gathering
-    const events = await getEvents(
-        selectedFilters.calendars,
-        selectedFilters.fromDate,
-        selectedFilters.toDate,
-    );
-    const servicesDict = await getServicesDict();
-    //   console.log(servicesDict);
-    //   printServices(events, servicesDict, relevantServices);
-
-    const dpCountServicesPerPerson = countServicesPerPerson(
-        events,
-        servicesDict,
-        selectedFilters.services,
-        selectedFilters.minServicesCount,
-    );
-
-    const dpCummulativePersontTime = cummulativePersonTime(
-        events,
-        selectedFilters.services,
-        selectedFilters.minServicesCount,
-    );
-
-    // Insert the charts DOM element into the placeholder
-    const chartsHTML = createChartsHTML();
-    const chartsWrapper =
-        document.querySelector<HTMLDivElement>("#chartsWrapper")!;
-    chartsWrapper.innerHTML = "";
-    chartsWrapper.append(chartsHTML);
-    const colors = getCTChartColors();
-
-    renderStackedChart(
-        "CountServicesPerPerson",
-        dpCountServicesPerPerson,
-        colors,
-    );
-    renderLineChart("CummulativePersontTime", dpCummulativePersontTime, colors);
-
-    updateEventListHTML(
-        "eventListWrapper",
-        events,
-        servicesDict,
-        selectedFilters.services,
-    );
-}
-
-function setupButtonHandler(buttonId: string, handler: () => void) {
-    const button = document.getElementById(buttonId);
-    if (!button) {
-        console.error(`Button #${buttonId} not found!`);
-        return;
-    }
-    // Remove any previous listener to avoid duplicates
-    button.replaceWith(button.cloneNode(true));
-    const newButton = document.getElementById(buttonId) as HTMLButtonElement;
-    newButton.addEventListener("click", handler);
-}
-
 /** Main plugin function */
 async function main() {
     /* HTML Updates */
-    //addBootstrapStyles();
+    const params = Object.fromEntries(new URLSearchParams(window.location.search));
+    const embedded = params["embedded"] === "true";
 
     const app = document.querySelector<HTMLDivElement>("#app")!;
     app.innerHTML = `
 <div class="container d-flex flex-column align-items-center justify-content-start min-vh-100 gap-3">
-    <div class="container" id="filterWrapper"></div>
-    <div class="container" id="chartsWrapper"></div>
-    <div class="container" id="eventListWrapper"></div>
+
 </div>
 `;
+    const container = app.querySelector(".container")!;
+
+    // explanation
+    if (!embedded) {
+        // Create explanation div
+        const explanation = document.createElement("div");
+
+        // Set id and classes
+        explanation.id = "explanation";
+        explanation.className = "p-4 mb-4 bg-gray-100 rounded shadow text-left";
+
+        // Set inner HTML
+        explanation.innerHTML = `
+            <p>
+                This extension provides additional iframes for embedding ChurchTools into pages with restricted access.
+                This applies, e.g., to all pages using Gemeindebaukasten (ELKW) which do not allow custom plugins or JS code.
+            </p>
+            <p>
+                If you open this extension within ChurchTools it will show the viewname, how it looks, and additional explanation.
+                Using the <code>embedded=true</code> option in addition to a viewname, the content from the black box can be displayed on its own.
+            </p>
+            <p>
+                To ensure this works, "Public User" needs to have permissions to view this plugin.
+                At present, public access without login is problematic because of API permissions. See 
+                <a href="https://github.com/bensteUEM/ct-iframes/issues/3" target="_blank" rel="noopener noreferrer">
+                Github issue
+                </a> for more details.
+            </p>
+            `;
+
+        // Append to container
+        container.appendChild(explanation);
+    }
+
+    // event list
+    if (params["view"] === "nextServicesWrapper" || !params["view"]) {
+        console.log("Generating event list...");
+        let events = await generateEventList()
+        if (embedded) {
+            container.appendChild(events);
+        }
+        else {
+            console.log("Wrapping event list...");
+            container.appendChild(await wrapExplanationDiv(events, "nextServicesWrapper"));
+        }
+    }
 
     // Conditionally add dev-only welcome section
-    if (import.meta.env.MODE === "development") {
+    if (import.meta.env.MODE === "development" && !embedded) {
         const devHeader = document.createElement("div");
         devHeader.className = "p-4 mb-4 bg-gray-100 rounded shadow text-center";
 
@@ -189,22 +108,41 @@ async function main() {
         devHeader.appendChild(subDiv);
 
         // Insert at the top of the container
-        const container = app.querySelector(".container")!;
         container.insertBefore(devHeader, container.firstChild);
     }
+}
 
-    // Insert the filter DOM element into the placeholder
-    const filterHTML = createFilterHTML();
-    const filterWrapper =
-        document.querySelector<HTMLDivElement>("#filterWrapper")!;
-    filterWrapper.innerHTML = "";
-    filterWrapper.appendChild(filterHTML);
+/**
+ * Create a div wrapper which explains how to use the view
+ * @param viewname - name of the view to be used
+ * @returns div which explains how to use the view
+ */
+async function wrapExplanationDiv(view: HTMLDivElement, viewname: string): Promise<HTMLDivElement> {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add(viewname, "p-4", "mb-4", "bg-gray-100", "rounded", "shadow", "text-left");
 
-    // additional setup links
-    setupButtonHandler("resetFilterBtn", () => resetFilterOptions());
-    setupButtonHandler("saveFilterBtn", () => saveFilterOptions(document));
-    setupButtonHandler("submitFilterBtn", () => submitFilterOptions());
-    resetFilterOptions();
+    let viewHeader = document.createElement("h3")
+    viewHeader.textContent = `View: ${viewname}`
+    viewHeader.className = "text-4xl font-bold";
+    wrapper.appendChild(viewHeader);
+
+    view.style.border = "1px solid #000";
+    wrapper.appendChild(view);
+
+    const howto = document.createElement("div");
+    howto.textContent = `To embed this iframe, use the URL below including its GET params`;
+    howto.appendChild(document.createElement("br"));
+
+    let targetUrl = window.location.origin + window.location.pathname + `?view=${viewname}&embedded=true`
+
+    const link = document.createElement("a");
+    link.textContent = targetUrl;
+    link.href = targetUrl;
+
+    howto.appendChild(link)
+    wrapper.appendChild(howto);
+
+    return wrapper;
 }
 
 main();

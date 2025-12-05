@@ -1,6 +1,6 @@
 import type { Person } from "./utils/ct-types";
 import { churchtoolsClient } from "@churchtools/churchtools-client";
-import {generateEventList} from "./events"
+import { generateEventList } from "./events"
 
 // only import reset.css in development mode
 if (import.meta.env.MODE === "development") {
@@ -18,6 +18,9 @@ churchtoolsClient.setBaseUrl(baseUrl);
 
 const username = import.meta.env.VITE_USERNAME;
 const password = import.meta.env.VITE_PASSWORD;
+
+console.log(username, password);
+
 if (import.meta.env.MODE === "development" && username && password) {
     await churchtoolsClient.post("/login", { username, password });
 }
@@ -27,7 +30,9 @@ export { KEY };
 
 /* end of initializiation */
 
+console.log("Fetching user info...");
 const user = await churchtoolsClient.get<Person>(`/whoami`);
+console.log("User info:", user);
 
 /** Main plugin function */
 async function main() {
@@ -40,6 +45,10 @@ async function main() {
     <div class="container" id="nextServicesWrapper"></div>
 </div>
 `;
+    // Insert next Services for debugging
+    const nextServicesWrapper = app.querySelector("#nextServicesWrapper")!;
+    let events = await generateEventList()
+    nextServicesWrapper.insertBefore(events, nextServicesWrapper.firstChild);
 
     // Conditionally add dev-only welcome section
     if (import.meta.env.MODE === "development") {
@@ -60,12 +69,8 @@ async function main() {
         // Insert at the top of the container
         const container = app.querySelector(".container")!;
         container.insertBefore(devHeader, container.firstChild);
-
-        // Insert next Services for debugging
-        const nextServicesWrapper = app.querySelector("#nextServicesWrapper")!;
-        let events = await generateEventList()
-        nextServicesWrapper.insertBefore(events, nextServicesWrapper.firstChild);
     }
+
 }
 
 main();

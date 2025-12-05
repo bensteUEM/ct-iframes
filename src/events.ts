@@ -6,7 +6,7 @@ import type { Event } from "./utils/ct-types";
 */
 export async function generateEventList(): Promise<HTMLDivElement> {
     let content = document.createElement("div");
-    let events = await getNextEvents(5)
+    let events = await getNextEvents([2], 10);
 
     if (events.length === 0) {
         content.innerHTML = "<p>No upcoming events.</p>";
@@ -57,10 +57,19 @@ export async function generateEventList(): Promise<HTMLDivElement> {
  * @param limit 
  * @returns list of events applicable to filter
  */
-async function getNextEvents(limit: number = 5): Promise<Event[]> {
+async function getNextEvents(calendarIds: number[] = [], limit: number = 5): Promise<Event[]> {
     const events = await churchtoolsClient.get<Event[]>(`/events`);
 
-    let limitedEvents = events.slice(0, limit)
+    console.log("Fetched events from CT:", events[0].calendar!.domainIdentifier, calendarIds.includes(Number(events[0].calendar!.domainIdentifier)));
+    let filteredEvents: Event[] = events.filter(event => {
+        // Filter by calendar IDs if provided
+        if (calendarIds.length > 0 && calendarIds.includes(Number(event.calendar!.domainIdentifier))) {
+            return true;
+        }
+    });
+
+
+    let limitedEvents: Event[] = filteredEvents.slice(0, limit)
 
     console.log("Retrieved following events:", limitedEvents);
     return limitedEvents;

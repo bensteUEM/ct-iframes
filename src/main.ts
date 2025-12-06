@@ -1,6 +1,6 @@
 import type { Person } from "./utils/ct-types";
 import { churchtoolsClient } from "@churchtools/churchtools-client";
-import { generateEventList } from "./events"
+import { generateEventList } from "./events";
 
 // only import reset.css in development mode
 if (import.meta.env.MODE === "development") {
@@ -35,7 +35,9 @@ const user = await churchtoolsClient.get<Person>(`/whoami`);
 /** Main plugin function */
 async function main() {
     /* HTML Updates */
-    const params = Object.fromEntries(new URLSearchParams(window.location.search));
+    const params = Object.fromEntries(
+        new URLSearchParams(window.location.search),
+    );
     const embedded = params["embedded"] === "true";
 
     const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -81,13 +83,14 @@ async function main() {
     // event list
     if (params["view"] === "nextServicesWrapper" || !params["view"]) {
         console.log("Generating event list...");
-        let events = await generateEventList()
+        let events = await generateEventList();
         if (embedded) {
             container.appendChild(events);
-        }
-        else {
+        } else {
             console.log("Wrapping event list...");
-            container.appendChild(await wrapExplanationDiv(events, "nextServicesWrapper"));
+            container.appendChild(
+                await wrapExplanationDiv(events, "nextServicesWrapper"),
+            );
         }
     }
 
@@ -117,12 +120,23 @@ async function main() {
  * @param viewname - name of the view to be used
  * @returns div which explains how to use the view
  */
-async function wrapExplanationDiv(view: HTMLDivElement, viewname: string): Promise<HTMLDivElement> {
+async function wrapExplanationDiv(
+    view: HTMLDivElement,
+    viewname: string,
+): Promise<HTMLDivElement> {
     const wrapper = document.createElement("div");
-    wrapper.classList.add(viewname, "p-4", "mb-4", "bg-gray-100", "rounded", "shadow", "text-left");
+    wrapper.classList.add(
+        viewname,
+        "p-4",
+        "mb-4",
+        "bg-gray-100",
+        "rounded",
+        "shadow",
+        "text-left",
+    );
 
-    let viewHeader = document.createElement("h3")
-    viewHeader.textContent = `View: ${viewname}`
+    let viewHeader = document.createElement("h3");
+    viewHeader.textContent = `View: ${viewname}`;
     viewHeader.className = "text-4xl font-bold";
     wrapper.appendChild(viewHeader);
 
@@ -133,13 +147,16 @@ async function wrapExplanationDiv(view: HTMLDivElement, viewname: string): Promi
     howto.textContent = `To embed this iframe, use the URL below including its GET params`;
     howto.appendChild(document.createElement("br"));
 
-    let targetUrl = window.location.origin + window.location.pathname + `?view=${viewname}&embedded=true`
+    let targetUrl =
+        window.location.origin +
+        window.location.pathname +
+        `?view=${viewname}&embedded=true`;
 
     const link = document.createElement("a");
     link.textContent = targetUrl;
     link.href = targetUrl;
 
-    howto.appendChild(link)
+    howto.appendChild(link);
     wrapper.appendChild(howto);
 
     return wrapper;

@@ -1,6 +1,12 @@
 import type { Person } from "./utils/ct-types";
 import { churchtoolsClient } from "@churchtools/churchtools-client";
 import { generateEventList } from "./events";
+import {
+    checkPermissions,
+    applyTokenExpiration,
+    generateAuthHTML,
+    loginSavedUser,
+} from "./auth";
 
 // only import reset.css in development mode
 if (import.meta.env.MODE === "development") {
@@ -18,8 +24,6 @@ churchtoolsClient.setBaseUrl(baseUrl);
 
 const username = import.meta.env.VITE_USERNAME;
 const password = import.meta.env.VITE_PASSWORD;
-
-console.log(username, password);
 
 if (import.meta.env.MODE === "development" && username && password) {
     await churchtoolsClient.post("/login", { username, password });
@@ -40,6 +44,18 @@ async function main() {
     );
     const embedded = params["embedded"] === "true";
 
+    // Check login
+    let login_available =
+        (await churchtoolsClient.get<Person>(`/whoami`)).id === -1;
+    // TODO implement dedicated permission check #11
+    if (embedded) {
+        login_available = await loginSavedUser();
+        // TODO implement dedicated permission check #11
+    } else {
+        applyTokenExpiration();
+    }
+    console.log("Login available:", login_available);
+
     const app = document.querySelector<HTMLDivElement>("#app")!;
     app.innerHTML = `
 <div class="container d-flex flex-column align-items-center justify-content-start min-vh-100 gap-3">
@@ -48,6 +64,10 @@ async function main() {
 `;
     const container = app.querySelector(".container")!;
 
+    // add possibility to share current users login
+    if ((await checkPermissions(true)) && !embedded) {
+        container.appendChild(await generateAuthHTML());
+    }
     // explanation
     if (!embedded) {
         // Create explanation div
@@ -81,7 +101,10 @@ async function main() {
     }
 
     // event list
-    if (params["view"] === "nextServicesWrapper" || !params["view"]) {
+    if (
+        (params["view"] === "nextServicesWrapper" || !params["view"]) &&
+        login_available
+    ) {
         console.log("Generating event list...");
         let events = await generateEventList();
         if (embedded) {

@@ -2,37 +2,21 @@
 
 This extension provides additional iframes which can be used to embed churchtools information into restricted websites e.g. https://www.gemeindebaukasten.de/ used in ELKW.
 
-## Getting Started
+## Usage ...
+In order to use this extension without user login - (embed on public web pages)
+1. Create a user "ct-iframes-tech-user" and set password to "<BASEURL>A1!" (replace with your own base URL inlcuding https:// and no / at end)
+This user will automatically be created if login with this configuration is not possible. Password needs to be set manually!
+2. Make sure "view", "view custom category" and "view custom data" permission are allowed for this user - NO Other rights should be available - not even show persons ...
+3. Allow full access to the user who should be used to display the information - NOT the tech user
+it might be better to use a dedicated user which only has access to the information required. 
+4. Open the extension in ChuchTools Web View and "Share current user login"
 
-### Prerequisites
+WARNING - sharing the user token technically allows anybody with access to this token to make changes on behalf of this person.
+Please be aware that this might compromise your security as the tech user setup is the same for all instances unless changed manually in the code.
+It is strongly adivsed to use a seperate user with minimal permissions - USE WITH CAUTION !
 
-- Node.js (version compatible with the project)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies:
-    ```bash
-    npm install
-    ```
-
-### Optional: Using Dev Container
-
-This project includes a dev container configuration. If you use VS Code with the "Dev Containers" extension, you can:
-
-1. Clone the repository
-2. Open it in VS Code
-3. Click the Remote Indicator in the bottom-left corner of VS Code status bar
-4. Select "Reopen in Container"
-
-The container includes the tools mentioned in the prerequisites pre-installed and also runs `npm install` on startup.
-
-## Configuration
-
-Copy `.env-example` to `.env` and fill in your data.
-
-In the `.env` file, configure the necessary constants for your project. This file is included in `.gitignore` to prevent sensitive data from being committed to version control.
+## Troubleshooting
+Issues with login / permissions or similar are logged on JS Console - if anything does not work as expected try to use developer tools console to read these messages.
 
 ## Development and Deployment
 

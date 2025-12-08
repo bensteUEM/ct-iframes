@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/bensteUEM/ct-iframes/compare/v1.0.0...v1.1.0) (2025-12-08)
+
+
+### Features
+
+* implemented public login snippets ([#3](https://github.com/bensteUEM/ct-iframes/issues/3)) ([b4e5e33](https://github.com/bensteUEM/ct-iframes/commit/b4e5e3320cc74d22e7e00a7a8c2b1667f880490e))
+
 ## 1.0.0 (2025-12-05)
 
 

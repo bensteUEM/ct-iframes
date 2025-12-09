@@ -32,7 +32,9 @@ declare const window: Window &
         settings: { base_url?: string };
     };
 
-const baseUrl = window.settings?.base_url ?? import.meta.env.VITE_BASE_URL;
+const baseUrl = (
+    window.settings?.base_url ?? import.meta.env.VITE_BASE_URL
+).replace(/\/+$/, "");
 
 const TECH_USERNAME = "ct-iframes-tech-user";
 const TECH_PASSWORD = `${baseUrl}A1!`;
@@ -47,10 +49,11 @@ const TECH_PASSWORD = `${baseUrl}A1!`;
  */
 function createButton(
     text: string,
-    additionalClasses: string[],
+    additionalClasses: string[] = [],
     onClick: () => Promise<void>,
-) {
+): HTMLButtonElement {
     const btn = document.createElement("button");
+
     btn.classList.add(
         "c-button",
         "c-button__S",
@@ -138,6 +141,7 @@ export async function createTechUserIfNotExists(): Promise<void> {
             "/persons",
             minimalUserInfo,
         );
+
         console.log(
             "Tech user created automatically - please ensure correct password and permissions -> see Readme.md",
             newUser,
@@ -148,17 +152,29 @@ export async function createTechUserIfNotExists(): Promise<void> {
         throw error;
     }
 }
+
 /** This methods calls logout for API and tries login with dedicated tech user
  */
 export async function loginTechUser(): Promise<boolean> {
     //console.log("Trying login with: ", TECH_USERNAME, TECH_PASSWORD);
-    await churchtoolsClient.post("/logout");
+
+    try {
+        await churchtoolsClient.post("/logout");
+        console.log("User logout finished");
+    } catch (err: AxiosError | any) {
+        if (err.response?.data?.messageKey === "exception.unauthorized") {
+            console.log("Skip logout because no one logged in");
+        } else {
+            console.error("Error logging out:", err.response?.data?.message);
+        }
+    }
 
     try {
         await churchtoolsClient.post("/login", {
             username: TECH_USERNAME,
             password: TECH_PASSWORD,
         });
+
         console.log(
             "Logged in with tech user.",
             await churchtoolsClient.get("/whoami"),
@@ -169,6 +185,7 @@ export async function loginTechUser(): Promise<boolean> {
             "Error logging in with tech user:",
             err.response?.data?.message,
         );
+
         await createTechUserIfNotExists();
         return false;
     }
@@ -191,6 +208,7 @@ export async function loginSavedUser(): Promise<boolean> {
 
     try {
         await churchtoolsClient.loginWithToken(login.token);
+
         console.log(
             "Logged in with saved token.",
             await churchtoolsClient.get("/whoami"),
@@ -226,7 +244,7 @@ export async function checkPermissions(writeAccess = false): Promise<boolean> {
     if (!loginCategory) return false;
 
     const hasPermission = categoryPermissions.includes(loginCategory.id);
-    console.log("Permission check:", hasPermission ? "OK" : "DENIED");
+    console.log("Write Permission check:", hasPermission ? "OK" : "DENIED");
 
     return hasPermission;
 }
@@ -242,6 +260,7 @@ export async function shareCurrentLogin(): Promise<void> {
         console.error("No write access to login storage.");
         return;
     }
+
     if (!(await getCustomDataCategory("login"))) {
         await resetStoredCategories();
     }
@@ -271,8 +290,8 @@ export async function revokeToken(): Promise<void> {
 
     const myUser = await churchtoolsClient.get<Person>("/whoami");
     console.log("Current user is:", myUser);
-    await churchtoolsClient.deleteApi(`/persons/${myUser.id}/logintoken`);
 
+    await churchtoolsClient.deleteApi(`/persons/${myUser.id}/logintoken`);
     await deleteSavedLogins();
 
     console.log("Login token revoked.");

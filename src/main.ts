@@ -45,16 +45,20 @@ async function main() {
     const embedded = params["embedded"] === "true";
 
     // Check login
-    let login_available =
-        (await churchtoolsClient.get<Person>(`/whoami`)).id === -1;
+    let login = await churchtoolsClient.get<Person>(`/whoami`);
+    let loginAvailable = login.id != -1;
+    console.log("Initial Extension login with:", login);
     // TODO implement dedicated permission check #11
-    if (embedded) {
-        login_available = await loginSavedUser();
+    if (!loginAvailable) {
+        loginAvailable = await loginSavedUser();
+        if (loginAvailable) {
+            login = await churchtoolsClient.get<Person>(`/whoami`);
+        }
         // TODO implement dedicated permission check #11
     } else {
         applyTokenExpiration();
     }
-    console.log("Login available:", login_available);
+    console.log("Login available:", loginAvailable);
 
     const app = document.querySelector<HTMLDivElement>("#app")!;
     app.innerHTML = `
@@ -103,7 +107,7 @@ async function main() {
     // event list
     if (
         (params["view"] === "nextServicesWrapper" || !params["view"]) &&
-        login_available
+        loginAvailable
     ) {
         console.log("Generating event list...");
         let events = await generateEventList();

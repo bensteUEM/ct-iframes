@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/bensteUEM/ct-iframes/compare/v1.1.0...v1.2.0) (2025-12-27)
+
+
+### Features
+
+* implement getSpecialDayName ([#18](https://github.com/bensteUEM/ct-iframes/issues/18)) ([aad3808](https://github.com/bensteUEM/ct-iframes/commit/aad38081022ab353b653d3bd5b343563fdca26d1))
+
+
+### Bug Fixes
+
+* Restrict Tech/Saved User usage after page loads ([a44c8cf](https://github.com/bensteUEM/ct-iframes/commit/a44c8cfff943c32097493a88821877f6f7a0c45a))
+
 ## [1.1.0](https://github.com/bensteUEM/ct-iframes/compare/v1.0.0...v1.1.0) (2025-12-09)
 
 

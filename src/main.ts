@@ -34,8 +34,6 @@ export { KEY };
 
 /* end of initializiation */
 
-const user = await churchtoolsClient.get<Person>(`/whoami`);
-
 /** Main plugin function */
 async function main() {
     /* HTML Updates */
@@ -128,7 +126,7 @@ async function main() {
 
         const h1 = document.createElement("h1");
         h1.className = "text-4xl font-bold";
-        h1.textContent = `Welcome ${user.firstName} ${user.lastName}`;
+        h1.textContent = `Welcome ${login.firstName} ${login.lastName}`;
 
         const subDiv = document.createElement("div");
         subDiv.className = "text-gray-500 text-sm";
@@ -140,6 +138,8 @@ async function main() {
         // Insert at the top of the container
         container.insertBefore(devHeader, container.firstChild);
     }
+
+    await churchtoolsClient.post("/logout");
 }
 
 /**

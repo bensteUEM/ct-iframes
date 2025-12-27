@@ -51,7 +51,6 @@ export async function resetStoredCategories(): Promise<boolean> {
 
     console.log("Created login category:", category);
     return true;
-    return true;
 }
 
 /**

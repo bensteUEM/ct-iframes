@@ -15,10 +15,18 @@ WARNING - sharing the user token technically allows anybody with access to this 
 Please be aware that this might compromise your security as the tech user setup is the same for all instances unless changed manually in the code.
 It is strongly adivsed to use a seperate user with minimal permissions - USE WITH CAUTION !
 
+### Re-Use of user credentials
+This extension uses a saved login token.
+After each execution a logout is performed because otherwise any user might be able to act on behalf of the user providing the token.
+
+WARNING - if the execution of scripts is stopped before end of script users might still be logged in.
+
 ## Troubleshooting
 Issues with login / permissions or similar are logged on JS Console - if anything does not work as expected try to use developer tools console to read these messages.
 
 ## Development and Deployment
+
+make sure you have an .env file with VITE_BASE_URL and VITE_KEY
 
 ### Development Server
 

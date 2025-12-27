@@ -1,10 +1,14 @@
 import { churchtoolsClient } from "@churchtools/churchtools-client";
 import type { Event } from "./utils/ct-types";
+import { getSpecialDayName } from "./calendars";
 
 /** Generate a HTML element which can display next events by date
+ * @param specialDayNameCalendarIds - optional array of ids of calendards to use for special day name lookup
  * @returns HTML div element
  */
-export async function generateEventList(): Promise<HTMLDivElement> {
+export async function generateEventList(
+    specialDayNameCalendarIds: number[] = [],
+): Promise<HTMLDivElement> {
     let content = document.createElement("div");
     let events = await getNextEvents([2], 10);
 
@@ -46,7 +50,17 @@ export async function generateEventList(): Promise<HTMLDivElement> {
                 day: "2-digit",
                 month: "2-digit",
             });
+            dateHeader.id = "dateHeader";
             content.appendChild(dateHeader);
+
+            // create header for each date
+            const specialDayHeader = document.createElement("span");
+            specialDayHeader.textContent = await getSpecialDayName(
+                date,
+                specialDayNameCalendarIds,
+            );
+            specialDayHeader.id = "specialDayHeader";
+            dateHeader.appendChild(specialDayHeader);
 
             console.log(`Events for ${date.toDateString()}:`, eventsForDate);
 

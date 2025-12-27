@@ -21,12 +21,22 @@ const LOGIN_CATEGORY_NAME = "login";
  * @return {Promise<boolean>} - true if reset was finished
  */
 export async function resetStoredCategories(): Promise<boolean> {
+    let success = true;
+
     let category = await getCustomDataCategory(LOGIN_CATEGORY_NAME);
     if (category) {
         console.log("Login category already exists.");
-        return true;
+        success = success && (await resetLoginCategory());
     }
 
+    return success;
+}
+
+/**
+ * Reset defaults category only.
+ * @returns if successful
+ */
+export async function resetLoginCategory(): Promise<boolean> {
     console.log("Login category missing → creating...");
 
     const dataSchema = JSON.stringify({
@@ -40,6 +50,8 @@ export async function resetStoredCategories(): Promise<boolean> {
     });
 
     const module = await getModule();
+    let category = await getCustomDataCategory(LOGIN_CATEGORY_NAME);
+
     category = await createCustomDataCategory({
         customModuleId: module.id,
         name: LOGIN_CATEGORY_NAME,

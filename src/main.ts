@@ -108,7 +108,16 @@ async function main() {
         loginAvailable
     ) {
         console.log("Generating event list...");
-        let events = await generateEventList();
+
+        const specialDayNameCalendarIds =
+            "specialDayNameCalendarIds" in params
+                ? params["specialDayNameCalendarIds"]
+                      .split(",")
+                      .map((s) => Number(s.trim()))
+                : [];
+
+        let events = await generateEventList(specialDayNameCalendarIds);
+
         if (embedded) {
             container.appendChild(events);
         } else {
@@ -184,6 +193,15 @@ async function wrapExplanationDiv(
     link.href = targetUrl;
 
     howto.appendChild(link);
+    if (viewname == "nextServicesWrapper") {
+        const link2 = document.createElement("a");
+        link2.textContent =
+            "It is possible to add a , seperated list of specialDayNameCalendarIds";
+        link2.href = targetUrl + "&specialDayNameCalendarIds=52";
+        howto.appendChild(document.createElement("br"));
+        howto.appendChild(link2);
+    }
+
     wrapper.appendChild(howto);
 
     return wrapper;

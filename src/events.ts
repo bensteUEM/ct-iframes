@@ -45,12 +45,25 @@ export async function generateEventList(
 
             // create header for each date
             const dateHeader = document.createElement("h3");
-            dateHeader.textContent = date.toLocaleDateString("de-DE", {
-                weekday: "long",
-                day: "2-digit",
-                month: "2-digit",
-            });
             dateHeader.id = "dateHeader";
+
+            const dateName = document.createElement("span");
+            dateName.id = "dateName";
+            dateName.textContent =
+                date.toLocaleDateString("de-DE", {
+                    weekday: "long",
+                }) + " ";
+
+            const dateDate = document.createElement("span");
+            dateDate.id = "dateDate";
+            dateDate.textContent =
+                date.toLocaleDateString("de-DE", {
+                    day: "2-digit",
+                    month: "2-digit",
+                }) + " ";
+            dateHeader.appendChild(dateName);
+            dateHeader.appendChild(dateDate);
+
             content.appendChild(dateHeader);
 
             // create header for each date
@@ -68,7 +81,28 @@ export async function generateEventList(
             const ul = document.createElement("ul");
             for (let event of eventsForDate) {
                 const li = document.createElement("li");
-                li.textContent = `${new Date(String(event.startDate)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${event.name}`;
+
+                const eventTime = document.createElement("span");
+                eventTime.id = "eventTime";
+                eventTime.textContent = new Date(
+                    String(event.startDate),
+                ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                });
+
+                const eventSpacer = document.createElement("span");
+                eventSpacer.id = "eventSpacer";
+                eventSpacer.textContent = " - ";
+
+                const eventTitle = document.createElement("span");
+                eventTitle.id = "eventTitle";
+                eventTitle.textContent = event?.name ?? "";
+
+                li.appendChild(eventTime);
+                li.appendChild(eventSpacer);
+                li.appendChild(eventTitle);
+
                 ul.appendChild(li);
             }
             content.appendChild(ul);

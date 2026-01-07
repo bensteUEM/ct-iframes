@@ -16,27 +16,27 @@ export interface LoginValueData {
 }
 
 const LOGIN_CATEGORY_NAME = "login";
+const CUSTOM_CSS_CATEGORY_NAME = "custom-css";
 
 /** Reset stored categories for all users if they don't exist
  * @return {Promise<boolean>} - true if reset was finished
  */
 export async function resetStoredCategories(): Promise<boolean> {
-    let success = true;
-
-    let category = await getCustomDataCategory(LOGIN_CATEGORY_NAME);
-    if (category) {
-        console.log("Login category already exists.");
-        success = success && (await resetLoginCategory());
-    }
-
-    return success;
+    await Promise.all([checkLoginCategory(), , checkCustomCssCategory()]);
+    return true;
 }
 
 /**
- * Reset defaults category only.
- * @returns if successful
+ * Checks if login category exists - creates it if not
+ * @returns if already existed
  */
-export async function resetLoginCategory(): Promise<boolean> {
+export async function checkLoginCategory(): Promise<boolean> {
+    const category = await getCustomDataCategory(LOGIN_CATEGORY_NAME);
+    if (category) {
+        console.log("Login category already exists.");
+        return true;
+    }
+
     console.log("Login category missing → creating...");
 
     const dataSchema = JSON.stringify({
@@ -50,9 +50,8 @@ export async function resetLoginCategory(): Promise<boolean> {
     });
 
     const module = await getModule();
-    let category = await getCustomDataCategory(LOGIN_CATEGORY_NAME);
 
-    category = await createCustomDataCategory({
+    await createCustomDataCategory({
         customModuleId: module.id,
         name: LOGIN_CATEGORY_NAME,
         shorty: LOGIN_CATEGORY_NAME,
@@ -62,7 +61,41 @@ export async function resetLoginCategory(): Promise<boolean> {
     });
 
     console.log("Created login category:", category);
-    return true;
+    return false;
+}
+
+/**
+ * Checks if custom CSS category exists - creates it if not
+ * @returns if already existed
+ */
+export async function checkCustomCssCategory(): Promise<boolean> {
+    const category = await getCustomDataCategory(CUSTOM_CSS_CATEGORY_NAME);
+    if (category) {
+        console.log("CustomCSS category already exists.");
+        return true;
+    }
+
+    console.log("CustomCSS category missing → creating...");
+
+    const dataSchema = JSON.stringify({
+        type: "object",
+        properties: {
+            selector: { type: "string" },
+            propertiy: { type: "string" },
+        },
+        required: ["selector", "property"],
+    });
+    const module = await getModule();
+
+    await createCustomDataCategory({
+        customModuleId: module.id,
+        name: CUSTOM_CSS_CATEGORY_NAME,
+        shorty: CUSTOM_CSS_CATEGORY_NAME,
+        description: "Stores custom CSS for the application",
+        data: dataSchema,
+    });
+
+    return false;
 }
 
 /**
@@ -131,5 +164,48 @@ export async function getLogin(): Promise<LoginValueData | null> {
     } catch (err) {
         console.error("Failed to retrieve login:", err);
         return null;
+    }
+}
+
+export async function insertCustomCSS(): Promise<void> {
+    try {
+        console.log("Inserting stored custom CSS...");
+
+        let category = await getCustomDataCategory<{
+            selector: string;
+            property: string;
+        }>(CUSTOM_CSS_CATEGORY_NAME);
+
+        if (!category) {
+            await checkCustomCssCategory();
+            category = await getCustomDataCategory<{
+            selector: string;
+            property: string;
+        }>(CUSTOM_CSS_CATEGORY_NAME);
+        }
+
+        const cssValues = await getCustomDataValues<{
+            selector: string;
+            property: string;
+        }>(category!.id);
+
+        if (!cssValues.length) {
+            console.log("No custom CSS values found.");
+            return;
+        }
+
+        let styleContent = "";
+        cssValues.forEach((cssValue) => {
+            console.log("Applying custom CSS:", cssValue);
+            styleContent += `#app ${cssValue.selector} { ${cssValue.property} }\n`;
+        });
+
+        const styleElement = document.createElement("style");
+        styleElement.type = "text/css";
+        styleElement.appendChild(document.createTextNode(styleContent));
+        document.head.appendChild(styleElement);
+        console.log("Custom CSS inserted.", styleElement);
+    } catch (err) {
+        console.error("Failed to insert custom CSS:", err);
     }
 }

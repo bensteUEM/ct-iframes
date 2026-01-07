@@ -21,6 +21,36 @@ After each execution a logout is performed because otherwise any user might be a
 
 WARNING - if the execution of scripts is stopped before end of script users might still be logged in.
 
+## Configuration items
+
+modifying each view is achieved by passing respective GET params listed in the description
+
+## login
+in KV Store will be used to store login token
+
+## custom-css
+each entry is used as a CSS style inserted into the document
+#app is added befor each selector to limit the style to the app itself
+
+if category does not exist it will be created upon first load.
+
+e.g. 
+```
+{
+    "selector": "#dateHeader",
+    "property": "background-color: #ffd800;"
+}
+```
+or 
+```
+{
+    "selector": "ul li:nth-child(odd)",
+    "property": "background-color:#f2f2f2;"
+}
+```
+
+Feel free to use developer console to check which css ids and classes are provided for each view
+
 ## Troubleshooting
 Issues with login / permissions or similar are logged on JS Console - if anything does not work as expected try to use developer tools console to read these messages.
 

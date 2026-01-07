@@ -7,6 +7,7 @@ import {
     generateAuthHTML,
     loginSavedUser,
 } from "./auth";
+import { insertCustomCSS } from "./persistance";
 
 // only import reset.css in development mode
 if (import.meta.env.MODE === "development") {
@@ -59,6 +60,9 @@ async function main() {
     console.log("Login available:", loginAvailable);
 
     const app = document.querySelector<HTMLDivElement>("#app")!;
+
+    await insertCustomCSS();
+
     app.innerHTML = `
 <div class="container d-flex flex-column align-items-center justify-content-start min-vh-100 gap-3">
 

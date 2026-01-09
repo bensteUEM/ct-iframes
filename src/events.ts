@@ -1,6 +1,7 @@
 import { churchtoolsClient } from "@churchtools/churchtools-client";
 import type { Event } from "./utils/ct-types";
 import { getSpecialDayName } from "./calendars";
+import { getTitleNameServices } from "./event_service_transformation";
 
 /** Generate a HTML element which can display next events by date
  * @param specialDayNameCalendarIds - optional array of ids of calendards to use for special day name lookup
@@ -10,7 +11,14 @@ export async function generateEventList(
     specialDayNameCalendarIds: number[] = [],
 ): Promise<HTMLDivElement> {
     let content = document.createElement("div");
-    let events = await getNextEvents([2], 10);
+
+    /* Configuration Section - samples apply to ELKW1610.krz.tools */
+    const CONSIDERED_CALENDAR_IDS = [2]
+    const CONSIDERED_PROGRAM_SERVICES = [1];
+    const CONSIDERED_PROGRAM_TITLE_GROUPS = [89, 355, 358, 361, 367, 370, 373];
+
+
+    let events = await getNextEvents(CONSIDERED_CALENDAR_IDS, 10);
 
     if (events.length === 0) {
         content.innerHTML = "<p>No upcoming events.</p>";
@@ -91,17 +99,35 @@ export async function generateEventList(
                     minute: "2-digit",
                 });
 
-                const eventSpacer = document.createElement("span");
-                eventSpacer.id = "eventSpacer";
-                eventSpacer.textContent = " - ";
+                const eventSpacer1 = document.createElement("span");
+                eventSpacer1.id = "eventSpacer1";
+                eventSpacer1.textContent = " - ";
 
                 const eventTitle = document.createElement("span");
                 eventTitle.id = "eventTitle";
                 eventTitle.textContent = event?.name ?? "";
 
+                const eventTitleNameServices = document.createElement("span");
+                eventTitleNameServices.id = "eventTitleNameServices";
+
+                const eventSpacer2 = document.createElement("span");
+                eventSpacer2.id = "eventSpacer2";
+                eventSpacer2.textContent = " - ";
+
+                eventTitleNameServices.textContent =
+                    await getTitleNameServices(
+                        Number(event.id),
+                        CONSIDERED_PROGRAM_SERVICES,
+                        CONSIDERED_PROGRAM_TITLE_GROUPS ,
+                    );
+
                 li.appendChild(eventTime);
-                li.appendChild(eventSpacer);
+                li.appendChild(eventSpacer1);
                 li.appendChild(eventTitle);
+                if (eventTitleNameServices.textContent.length > 0) {
+                    li.appendChild(eventSpacer2);
+                }
+                li.appendChild(eventTitleNameServices);
 
                 ul.appendChild(li);
             }

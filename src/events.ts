@@ -2,6 +2,7 @@ import { churchtoolsClient } from "@churchtools/churchtools-client";
 import type { Event } from "./utils/ct-types";
 import { getSpecialDayName } from "./calendars";
 import { getTitleNameServices } from "./event_service_transformation";
+import { getResourceNames } from "./resources";
 
 /** Generate a HTML element which can display next events by date
  * @param specialDayNameCalendarIds - optional array of ids of calendards to use for special day name lookup
@@ -13,10 +14,10 @@ export async function generateEventList(
     let content = document.createElement("div");
 
     /* Configuration Section - samples apply to ELKW1610.krz.tools */
-    const CONSIDERED_CALENDAR_IDS = [2]
+    const CONSIDERED_CALENDAR_IDS = [2];
     const CONSIDERED_PROGRAM_SERVICES = [1];
     const CONSIDERED_PROGRAM_TITLE_GROUPS = [89, 355, 358, 361, 367, 370, 373];
-
+    const CONSIDERED_RESOURCE_IDS = [-1, 8, 20, 21, 16, 17];
 
     let events = await getNextEvents(CONSIDERED_CALENDAR_IDS, 10);
 
@@ -107,27 +108,48 @@ export async function generateEventList(
                 eventTitle.id = "eventTitle";
                 eventTitle.textContent = event?.name ?? "";
 
-                const eventTitleNameServices = document.createElement("span");
-                eventTitleNameServices.id = "eventTitleNameServices";
-
                 const eventSpacer2 = document.createElement("span");
                 eventSpacer2.id = "eventSpacer2";
                 eventSpacer2.textContent = " - ";
 
-                eventTitleNameServices.textContent =
-                    await getTitleNameServices(
-                        Number(event.id),
-                        CONSIDERED_PROGRAM_SERVICES,
-                        CONSIDERED_PROGRAM_TITLE_GROUPS ,
+                const eventTitleNameServices = document.createElement("span");
+                eventTitleNameServices.id = "eventTitleNameServices";
+                eventTitleNameServices.textContent = await getTitleNameServices(
+                    Number(event.id),
+                    CONSIDERED_PROGRAM_SERVICES,
+                    CONSIDERED_PROGRAM_TITLE_GROUPS,
+                );
+
+                const eventSpacer3 = document.createElement("span");
+                eventSpacer3.id = "eventSpacer3";
+                eventSpacer3.textContent = " - ";
+
+                const eventResourceName = document.createElement("span");
+                eventResourceName.id = "eventResourceName";
+
+                if (event.startDate && event.name) {
+                    const eventResourceNames = await getResourceNames(
+                        event.name,
+                        new Date(event.startDate),
+                        CONSIDERED_RESOURCE_IDS,
                     );
+                    eventResourceName.textContent = eventResourceNames[0] || "";
+                }
 
                 li.appendChild(eventTime);
                 li.appendChild(eventSpacer1);
                 li.appendChild(eventTitle);
                 if (eventTitleNameServices.textContent.length > 0) {
                     li.appendChild(eventSpacer2);
+                    li.appendChild(eventTitleNameServices);
                 }
-                li.appendChild(eventTitleNameServices);
+
+                if (eventResourceName.textContent.length > 0) {
+                    li.appendChild(eventSpacer3);
+                    eventResourceName.textContent =
+                        "[" + eventResourceName.textContent + "]";
+                    li.appendChild(eventResourceName);
+                }
 
                 ul.appendChild(li);
             }

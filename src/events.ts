@@ -1,6 +1,10 @@
 import { churchtoolsClient } from "@churchtools/churchtools-client";
 import type { Event } from "./utils/ct-types";
-import { getSpecialDayName } from "./calendars";
+import {
+    generateCalendarTitleReplacement,
+    getCalendarAppointment,
+    getSpecialDayName,
+} from "./calendars";
 import { getTitleNameServices } from "./event_service_transformation";
 import { getResourceNames } from "./resources";
 
@@ -100,18 +104,20 @@ export async function generateEventList(
                     minute: "2-digit",
                 });
 
-                const eventSpacer1 = document.createElement("span");
-                eventSpacer1.id = "eventSpacer1";
-                eventSpacer1.textContent = " - ";
+                /* Event Title with possible Appendix from Calendar Appointment */
+                const calendarAppointment = await getCalendarAppointment(
+                    Number(event.calendar?.domainIdentifier),
+                    Number(event.appointmentId),
+                );
 
                 const eventTitle = document.createElement("span");
                 eventTitle.id = "eventTitle";
-                eventTitle.textContent = event?.name ?? "";
+                eventTitle.textContent = await generateCalendarTitleReplacement(
+                    calendarAppointment?.title ?? "",
+                    calendarAppointment?.subtitle ?? "",
+                );
 
-                const eventSpacer2 = document.createElement("span");
-                eventSpacer2.id = "eventSpacer2";
-                eventSpacer2.textContent = " - ";
-
+                /* Event Title Name Services addition */
                 const eventTitleNameServices = document.createElement("span");
                 eventTitleNameServices.id = "eventTitleNameServices";
                 eventTitleNameServices.textContent = await getTitleNameServices(
@@ -120,10 +126,7 @@ export async function generateEventList(
                     CONSIDERED_PROGRAM_TITLE_GROUPS,
                 );
 
-                const eventSpacer3 = document.createElement("span");
-                eventSpacer3.id = "eventSpacer3";
-                eventSpacer3.textContent = " - ";
-
+                /* Event Resource Name */
                 const eventResourceName = document.createElement("span");
                 eventResourceName.id = "eventResourceName";
 
@@ -136,16 +139,36 @@ export async function generateEventList(
                     eventResourceName.textContent = eventResourceNames[0] || "";
                 }
 
+                /* Combine all parts including spacers if content */
                 li.appendChild(eventTime);
-                li.appendChild(eventSpacer1);
-                li.appendChild(eventTitle);
+
+                if (eventTitle.textContent.length > 0) {
+                    li.appendChild(
+                        Object.assign(document.createElement("span"), {
+                            id: "eventSpacerTitle",
+                            textContent: " - ",
+                        }),
+                    );
+                    li.appendChild(eventTitle);
+                }
+
                 if (eventTitleNameServices.textContent.length > 0) {
-                    li.appendChild(eventSpacer2);
+                    li.appendChild(
+                        Object.assign(document.createElement("span"), {
+                            id: "eventSpacerTitleNameServices",
+                            textContent: " - ",
+                        }),
+                    );
                     li.appendChild(eventTitleNameServices);
                 }
 
                 if (eventResourceName.textContent.length > 0) {
-                    li.appendChild(eventSpacer3);
+                    li.appendChild(
+                        Object.assign(document.createElement("span"), {
+                            id: "eventSpacerResourceName",
+                            textContent: " - ",
+                        }),
+                    );
                     eventResourceName.textContent =
                         "[" + eventResourceName.textContent + "]";
                     li.appendChild(eventResourceName);
@@ -169,7 +192,6 @@ async function getNextEvents(
     limit: number = 5,
 ): Promise<Event[]> {
     const events = await churchtoolsClient.get<Event[]>(`/events`);
-
     console.log(
         "Fetched events from CT:",
         events[0].calendar!.domainIdentifier,

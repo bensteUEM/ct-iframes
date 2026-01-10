@@ -126,6 +126,12 @@ export async function generateEventList(
                     CONSIDERED_PROGRAM_TITLE_GROUPS,
                 );
 
+                /* Event Special Service addition */
+                const eventSpecialService = document.createElement("span");
+                eventSpecialService.id = "eventSpecialService";
+                eventSpecialService.textContent =
+                    await genereateEventSpecialService(event);
+
                 /* Event Resource Name */
                 const eventResourceName = document.createElement("span");
                 eventResourceName.id = "eventResourceName";
@@ -162,6 +168,16 @@ export async function generateEventList(
                     li.appendChild(eventTitleNameServices);
                 }
 
+                if (eventSpecialService.textContent.length > 0) {
+                    li.appendChild(
+                        Object.assign(document.createElement("span"), {
+                            id: "eventSpacerSpecialService  ",
+                            textContent: " - ",
+                        }),
+                    );
+                    li.appendChild(eventSpecialService);
+                }
+
                 if (eventResourceName.textContent.length > 0) {
                     li.appendChild(
                         Object.assign(document.createElement("span"), {
@@ -185,13 +201,15 @@ export async function generateEventList(
 /**
  * fetch list of next events using specified params
  * @param limit
- * @returns list of events applicable to filter
+ * @returns list of events applicable to filter including eventServices
  */
 async function getNextEvents(
     calendarIds: number[] = [],
     limit: number = 5,
 ): Promise<Event[]> {
-    const events = await churchtoolsClient.get<Event[]>(`/events`);
+    const events = await churchtoolsClient.get<Event[]>(
+        `/events?include=eventServices`,
+    );
     console.log(
         "Fetched events from CT:",
         events[0].calendar!.domainIdentifier,
@@ -211,4 +229,43 @@ async function getNextEvents(
 
     console.log("Retrieved following events:", limitedEvents);
     return limitedEvents;
+}
+
+/**
+ * Generate special service string for event if applicable
+ * e.g. if service "Posaunenchor" is assigned to event, return " mit Posaunenchor"
+ * mapping based on service ids
+ * @param event reference event with Services
+ * @return special service string or empty string
+ */
+async function genereateEventSpecialService(event: Event): Promise<string> {
+    const specialServiceMap: Record<number, string> = {
+        89: "Chor",
+        92: "Chor",
+        93: "Chor",
+        96: "Chor",
+        54: "InJoy",
+        10: "Musikteam",
+        61: "Posaunenchor",
+        73: "Abendmahl",
+        127: "Taufe",
+    };
+
+    const labels = new Set<string>();
+
+    if (!event?.eventServices) {
+        console.log("No event services found.");
+        return "";
+    }
+
+    for (const service of event?.eventServices) {
+        if (!service.serviceId) continue;
+        const label = specialServiceMap[service.serviceId];
+        if (label) labels.add(label);
+    }
+    console.log("Special service labels:", labels);
+
+    const result = [...labels].join(", ");  
+
+    return result ? ` mit ${result}` : "";
 }

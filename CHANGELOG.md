@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.2.0](https://github.com/bensteUEM/ct-iframes/compare/v1.1.0...v1.2.0) (2026-01-10)
+
+
+### Features
+
+* adding additional style options ([#19](https://github.com/bensteUEM/ct-iframes/issues/19)) ([5ab8d01](https://github.com/bensteUEM/ct-iframes/commit/5ab8d01532a7206f4b1079c258388aa2b0824ec1))
+* implement custom CSS insert ([#19](https://github.com/bensteUEM/ct-iframes/issues/19)) ([4449e66](https://github.com/bensteUEM/ct-iframes/commit/4449e660ca5f742e6e9f7e931208bd2708a21382))
+* implement eventSpecialService ([#25](https://github.com/bensteUEM/ct-iframes/issues/25)) ([e95a0e2](https://github.com/bensteUEM/ct-iframes/commit/e95a0e26e5b65a89e51e53611d9be205d104b2bb))
+* implement getSpecialDayName ([#18](https://github.com/bensteUEM/ct-iframes/issues/18)) ([aad3808](https://github.com/bensteUEM/ct-iframes/commit/aad38081022ab353b653d3bd5b343563fdca26d1))
+* implement title name services ([#26](https://github.com/bensteUEM/ct-iframes/issues/26)) ([3e932e8](https://github.com/bensteUEM/ct-iframes/commit/3e932e854a684791bd32bbd6f3172383b4cdd948))
+* implemented  getResourceNames  ([#24](https://github.com/bensteUEM/ct-iframes/issues/24)) ([7e489fa](https://github.com/bensteUEM/ct-iframes/commit/7e489fa450d622856aa7839718b950e8d990b914))
+* implemented title replacements ([#23](https://github.com/bensteUEM/ct-iframes/issues/23)) ([c826b8a](https://github.com/bensteUEM/ct-iframes/commit/c826b8ac8abbc016da55aaae89e0217391d03d86))
+
+
+### Bug Fixes
+
+* Restrict Tech/Saved User usage after page loads ([a44c8cf](https://github.com/bensteUEM/ct-iframes/commit/a44c8cfff943c32097493a88821877f6f7a0c45a))
+
 ## [1.1.0](https://github.com/bensteUEM/ct-iframes/compare/v1.0.0...v1.1.0) (2025-12-09)
 
 

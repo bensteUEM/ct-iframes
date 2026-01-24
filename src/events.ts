@@ -19,9 +19,6 @@ export async function generateEventList(
 
     /* Configuration Section - samples apply to ELKW1610.krz.tools */
     const CONSIDERED_CALENDAR_IDS = [2];
-    const CONSIDERED_PROGRAM_SERVICES = [1];
-    const CONSIDERED_PROGRAM_TITLE_GROUPS = [89, 355, 358, 361, 367, 370, 373];
-    const CONSIDERED_RESOURCE_IDS = [-1, 8, 20, 21, 16, 17];
 
     let events = await getNextEvents(CONSIDERED_CALENDAR_IDS, 10);
 
@@ -47,155 +44,179 @@ export async function generateEventList(
             ),
         ).map((time) => new Date(time));
 
-        //console.log("Event Dates:", uniqueDates);
+        const dateSections = await Promise.all(
+            uniqueDates.map(async (date) => {
+                const fragment = document.createDocumentFragment();
 
-        for (let date of uniqueDates) {
-            // filter date to each iteration
-            const eventsForDate = events.filter((event) => {
-                const eventDate = new Date(String(event.startDate));
-                return truncateTime(eventDate).getTime() === date.getTime();
-            });
-
-            // create header for each date
-            const dateHeader = document.createElement("h3");
-            dateHeader.id = "dateHeader";
-
-            const dateName = document.createElement("span");
-            dateName.id = "dateName";
-            dateName.textContent =
-                date.toLocaleDateString("de-DE", {
-                    weekday: "long",
-                }) + " ";
-
-            const dateDate = document.createElement("span");
-            dateDate.id = "dateDate";
-            dateDate.textContent =
-                date.toLocaleDateString("de-DE", {
-                    day: "2-digit",
-                    month: "2-digit",
-                }) + " ";
-            dateHeader.appendChild(dateName);
-            dateHeader.appendChild(dateDate);
-
-            content.appendChild(dateHeader);
-
-            // create header for each date
-            const specialDayHeader = document.createElement("span");
-            specialDayHeader.textContent = await getSpecialDayName(
-                date,
-                specialDayNameCalendarIds,
-            );
-            specialDayHeader.id = "specialDayHeader";
-            dateHeader.appendChild(specialDayHeader);
-
-            console.log(`Events for ${date.toDateString()}:`, eventsForDate);
-
-            // create a list for each date
-            const ul = document.createElement("ul");
-            for (let event of eventsForDate) {
-                const li = document.createElement("li");
-
-                const eventTime = document.createElement("span");
-                eventTime.id = "eventTime";
-                eventTime.textContent = new Date(
-                    String(event.startDate),
-                ).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                const eventsForDate = events.filter((event) => {
+                    const eventDate = new Date(String(event.startDate));
+                    return truncateTime(eventDate).getTime() === date.getTime();
                 });
 
-                /* Event Title with possible Appendix from Calendar Appointment */
-                const calendarAppointment = await getCalendarAppointment(
-                    Number(event.calendar?.domainIdentifier),
-                    Number(event.appointmentId),
+                const dateHeader = document.createElement("h3");
+                dateHeader.id = "dateHeader";
+
+                const dateName = document.createElement("span");
+                dateName.id = "dateName";
+                dateName.textContent =
+                    date.toLocaleDateString("de-DE", { weekday: "long" }) + " ";
+
+                const dateDate = document.createElement("span");
+                dateDate.id = "dateDate";
+                dateDate.textContent =
+                    date.toLocaleDateString("de-DE", {
+                        day: "2-digit",
+                        month: "2-digit",
+                    }) + " ";
+
+                dateHeader.append(dateName, dateDate);
+
+                const specialDayHeader = document.createElement("span");
+                specialDayHeader.id = "specialDayHeader";
+                specialDayHeader.textContent = await getSpecialDayName(
+                    date,
+                    specialDayNameCalendarIds,
                 );
 
-                const eventTitle = document.createElement("span");
-                eventTitle.id = "eventTitle";
-                eventTitle.textContent = await generateCalendarTitleReplacement(
-                    calendarAppointment?.title ?? "",
-                    calendarAppointment?.subtitle ?? "",
+                dateHeader.appendChild(specialDayHeader);
+                fragment.appendChild(dateHeader);
+
+                const ul = document.createElement("ul");
+                const lis = await Promise.all(
+                    eventsForDate.map(generateEventRow),
                 );
 
-                /* Event Title Name Services addition */
-                const eventTitleNameServices = document.createElement("span");
-                eventTitleNameServices.id = "eventTitleNameServices";
-                eventTitleNameServices.textContent = await getTitleNameServices(
-                    Number(event.id),
-                    CONSIDERED_PROGRAM_SERVICES,
-                    CONSIDERED_PROGRAM_TITLE_GROUPS,
-                );
+                ul.append(...lis);
+                fragment.appendChild(ul);
 
-                /* Event Special Service addition */
-                const eventSpecialService = document.createElement("span");
-                eventSpecialService.id = "eventSpecialService";
-                eventSpecialService.textContent =
-                    await genereateEventSpecialService(event);
-
-                /* Event Resource Name */
-                const eventResourceName = document.createElement("span");
-                eventResourceName.id = "eventResourceName";
-
-                if (event.startDate && event.name) {
-                    const eventResourceNames = await getResourceNames(
-                        event.name,
-                        new Date(event.startDate),
-                        CONSIDERED_RESOURCE_IDS,
-                    );
-                    eventResourceName.textContent = eventResourceNames[0] || "";
-                }
-
-                /* Combine all parts including spacers if content */
-                li.appendChild(eventTime);
-
-                if (eventTitle.textContent.length > 0) {
-                    li.appendChild(
-                        Object.assign(document.createElement("span"), {
-                            id: "eventSpacerTitle",
-                            textContent: " - ",
-                        }),
-                    );
-                    li.appendChild(eventTitle);
-                }
-
-                if (eventTitleNameServices.textContent.length > 0) {
-                    li.appendChild(
-                        Object.assign(document.createElement("span"), {
-                            id: "eventSpacerTitleNameServices",
-                            textContent: " - ",
-                        }),
-                    );
-                    li.appendChild(eventTitleNameServices);
-                }
-
-                if (eventSpecialService.textContent.length > 0) {
-                    li.appendChild(
-                        Object.assign(document.createElement("span"), {
-                            id: "eventSpacerSpecialService  ",
-                            textContent: " - ",
-                        }),
-                    );
-                    li.appendChild(eventSpecialService);
-                }
-
-                if (eventResourceName.textContent.length > 0) {
-                    li.appendChild(
-                        Object.assign(document.createElement("span"), {
-                            id: "eventSpacerResourceName",
-                            textContent: " - ",
-                        }),
-                    );
-                    eventResourceName.textContent =
-                        "[" + eventResourceName.textContent + "]";
-                    li.appendChild(eventResourceName);
-                }
-
-                ul.appendChild(li);
-            }
-            content.appendChild(ul);
-        }
+                return fragment;
+            }),
+        );
+        content.append(...dateSections);
     }
     return content;
+}
+
+/** Generate a HTML LI element for an event
+ * 1. request calendar appointment and calendar based title replacement
+ * 2. request event based information
+ * 3. genereate HTML element
+ * @param event - reference event
+ * @returns HTML LI element
+ */
+async function generateEventRow(event: Event): Promise<HTMLLIElement> {
+    /* Configuration Section - samples apply to ELKW1610.krz.tools */
+    const CONSIDERED_PROGRAM_SERVICES = [1];
+    const CONSIDERED_PROGRAM_TITLE_GROUPS = [89, 355, 358, 361, 367, 370, 373];
+    const CONSIDERED_RESOURCE_IDS = [-1, 8, 20, 21, 16, 17];
+
+    /* Parrallel Requests for data */
+    const calendarAppointmentPromise = getCalendarAppointment(
+        Number(event.calendar?.domainIdentifier),
+        Number(event.appointmentId),
+    );
+
+    const titleNameServicesPromise = getTitleNameServices(
+        Number(event.id),
+        CONSIDERED_PROGRAM_SERVICES,
+        CONSIDERED_PROGRAM_TITLE_GROUPS,
+    );
+
+    const genereateEventSpecialServicePromise =
+        genereateEventSpecialService(event);
+
+    const getResourceNamesPromise: Promise<string[]> =
+        event.startDate && event.name
+            ? getResourceNames(
+                  event.name,
+                  new Date(event.startDate),
+                  CONSIDERED_RESOURCE_IDS,
+              )
+            : Promise.resolve([]);
+
+    /* Event Title with possible Appendix from Calendar Appointment */
+    const calendarAppointment = await calendarAppointmentPromise;
+
+    /* Run All remaining requests in parralel */
+    const [
+        eventTitleText,
+        titleNameServicesText,
+        eventSpecialServiceText,
+        eventResourceNamesText,
+    ] = await Promise.all([
+        generateCalendarTitleReplacement(
+            calendarAppointment?.title ?? "",
+            calendarAppointment?.subtitle ?? "",
+        ),
+        titleNameServicesPromise,
+        genereateEventSpecialServicePromise,
+        getResourceNamesPromise,
+    ]);
+
+    /* Create HTML Elements */
+    const li = document.createElement("li");
+
+    const eventTime = document.createElement("span");
+    eventTime.id = "eventTime";
+    eventTime.textContent = new Date(
+        String(event.startDate),
+    ).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+    const eventTitle = document.createElement("span");
+    eventTitle.id = "eventTitle";
+    eventTitle.textContent = eventTitleText;
+
+    /* Event Title Name Services addition */
+    const eventTitleNameServices = document.createElement("span");
+    eventTitleNameServices.id = "eventTitleNameServices";
+    eventTitleNameServices.textContent = titleNameServicesText;
+
+    /* Event Special Service addition */
+    const eventSpecialService = document.createElement("span");
+    eventSpecialService.id = "eventSpecialService";
+    eventSpecialService.textContent = eventSpecialServiceText;
+
+    /* Event Resource Name */
+    const eventResourceName = document.createElement("span");
+    eventResourceName.id = "eventResourceName";
+    eventResourceName.textContent = eventResourceNamesText[0] ?? "";
+
+    /* Combine all parts including spacers if content */
+    li.appendChild(eventTime);
+
+    const appendWithSpacer = (
+        id: string,
+        el: HTMLElement,
+        spacer: string = " - ",
+    ) => {
+        if (el.textContent.length > 0) {
+            li.appendChild(
+                Object.assign(document.createElement("span"), {
+                    id,
+                    textContent: spacer,
+                }),
+            );
+            li.appendChild(el);
+        }
+    };
+
+    appendWithSpacer("eventSpacerTitle", eventTitle, " - ");
+    appendWithSpacer(
+        "eventSpacerTitleNameServices",
+        eventTitleNameServices,
+        " - ",
+    );
+    appendWithSpacer("eventSpacerSpecialService", eventSpecialService, " - ");
+
+    if (eventResourceName.textContent.length > 0) {
+        appendWithSpacer("eventSpacerResourceName", eventResourceName, " - ");
+        eventResourceName.textContent =
+            "[" + eventResourceName.textContent + "]";
+    }
+    return li;
 }
 
 /**
@@ -210,11 +231,11 @@ async function getNextEvents(
     const events = await churchtoolsClient.get<Event[]>(
         `/events?include=eventServices`,
     );
-    console.log(
+    /*console.log(
         "Fetched events from CT:",
-        events[0].calendar!.domainIdentifier,
-        calendarIds.includes(Number(events[0].calendar!.domainIdentifier)),
-    );
+        //events[0].calendar!.domainIdentifier,
+        //calendarIds.includes(Number(events[0].calendar!.domainIdentifier)),
+    );*/
     let filteredEvents: Event[] = events.filter((event) => {
         // Filter by calendar IDs if provided
         if (
@@ -227,7 +248,9 @@ async function getNextEvents(
 
     let limitedEvents: Event[] = filteredEvents.slice(0, limit);
 
-    console.log("Retrieved following events:", limitedEvents);
+    console.log(
+        `Got next ${limitedEvents.length} events`, //, limitedEvents
+    );
     return limitedEvents;
 }
 
@@ -263,9 +286,9 @@ async function genereateEventSpecialService(event: Event): Promise<string> {
         const label = specialServiceMap[service.serviceId];
         if (label) labels.add(label);
     }
-    console.log("Special service labels:", labels);
+    //console.log("Special service labels:", labels);
 
-    const result = [...labels].join(", ");  
+    const result = [...labels].join(", ");
 
     return result ? ` mit ${result}` : "";
 }

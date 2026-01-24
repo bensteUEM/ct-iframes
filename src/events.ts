@@ -233,8 +233,8 @@ async function getNextEvents(
     );
     console.log(
         "Fetched events from CT:",
-        events[0].calendar!.domainIdentifier,
-        calendarIds.includes(Number(events[0].calendar!.domainIdentifier)),
+        //events[0].calendar!.domainIdentifier,
+        //calendarIds.includes(Number(events[0].calendar!.domainIdentifier)),
     );
     let filteredEvents: Event[] = events.filter((event) => {
         // Filter by calendar IDs if provided
@@ -248,7 +248,9 @@ async function getNextEvents(
 
     let limitedEvents: Event[] = filteredEvents.slice(0, limit);
 
-    console.log("Retrieved following events:", limitedEvents);
+    console.log(
+        "Retrieved events:", //, limitedEvents
+    );
     return limitedEvents;
 }
 
@@ -284,7 +286,7 @@ async function genereateEventSpecialService(event: Event): Promise<string> {
         const label = specialServiceMap[service.serviceId];
         if (label) labels.add(label);
     }
-    console.log("Special service labels:", labels);
+    //console.log("Special service labels:", labels);
 
     const result = [...labels].join(", ");
 

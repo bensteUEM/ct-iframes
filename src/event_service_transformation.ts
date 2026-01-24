@@ -12,6 +12,9 @@ import type {
     Group,
 } from "./utils/ct-types";
 
+let masterdataCache: PersonMasterData | null = null;
+let groupCache = new Map<number, string>(); // Cache: groupId -> groupName
+
 /**
  *  Helper function which retrieves a text representation of an event service including the persons title based on considered groups.
 
@@ -29,38 +32,36 @@ export async function getTitleNameServices(
     consideredProgramServices: number[],
     consideredProgramTitleGroups: number[],
 ): Promise<string> {
-    let relevantPersons: DomainObjectPerson[] = [];
+    let relevantPersonsArrays = await Promise.all(
+        consideredProgramServices.map((serviceId) =>
+            getPersonsWithService(eventId, serviceId),
+        ),
+    );
+    const relevantPersons = relevantPersonsArrays.flat();
 
-    for (const serviceId of consideredProgramServices) {
-        const persons = await getPersonsWithService(eventId, serviceId);
-        relevantPersons = relevantPersons.concat(persons);
-    }
+    const namesWithTitle = await Promise.all(
+        relevantPersons.map(async (person) => {
+            let titlePrefix = await getGroupTitleOfPerson(
+                person,
+                consideredProgramTitleGroups,
+            );
+            titlePrefix = await getGenderedGroupName(person, titlePrefix);
 
-    const namesWithTitle: string[] = [];
+            let formattedName: string;
 
-    for (const person of relevantPersons) {
-        let titlePrefix = await getGroupTitleOfPerson(
-            person,
-            consideredProgramTitleGroups,
-        );
-
-        titlePrefix = await getGenderedGroupName(person, titlePrefix);
-
-        let formattedName: string;
-
-        if (person.domainIdentifier) {
-            const lastName = person.domainAttributes.lastName;
-            formattedName = `${titlePrefix} ${lastName}`.trim();
-        } else {
-            formattedName = "Noch unbekannt";
-        }
-
-        namesWithTitle.push(formattedName);
-    }
+            if (person.domainIdentifier) {
+                const lastName = person.domainAttributes.lastName;
+                formattedName = `${titlePrefix} ${lastName}`.trim();
+            } else {
+                formattedName = "Noch unbekannt";
+            }
+            return formattedName;
+        }),
+    );
     const result = namesWithTitle.join(", ");
-    console.log(`Final formatted names with titles: ${result}`);
+    //console.log(`Final formatted names with titles: ${result}`);
 
-    return result
+    return result;
 }
 
 /**
@@ -81,17 +82,17 @@ export async function getPersonsWithService(
         return [];
     }
 
-    console.log(
+    /*console.log(
         `Found ${relevantEvent.eventServices.length} services for event ${eventId}`,
-    );
+    );*/
 
     const result = relevantEvent.eventServices
         .filter((s) => s.serviceId === serviceId && s.person)
         .map((s) => s.person!);
 
-    console.log(
+    /*console.log(
         `Found ${result.length} persons for service ${serviceId} in event ${eventId}`,
-    );
+    );*/
 
     return result;
 }
@@ -111,24 +112,23 @@ export async function getGroupTitleOfPerson(
     relevantGroups: number[],
 ): Promise<string> {
     for (const groupId of relevantGroups) {
+        // Check cache first
+        if (!groupCache.has(groupId)) {
+            const group = await churchtoolsClient.get<Group>(`/groups/${groupId}`);
+            groupCache.set(groupId, group.name);
+        }
+
+        const groupName = groupCache.get(groupId)!;
+
+        // Check if person is in this group
         const members = await churchtoolsClient.get<GroupMember[]>(
-            `/groups/${groupId}/members?person_id[]=${person.domainIdentifier}`,
+            `/groups/${groupId}/members?person_id[]=${person.domainIdentifier}`
         );
 
-        if (members.length === 0) {
-            continue;
+        if (members.length > 0) {
+            return groupName;
         }
-        const result = (
-            await churchtoolsClient.get<Group>(`/groups/${groupId}`)
-        ).name;
-        console.log(
-            `Found relevant group title "${result}" for person ${person.domainIdentifier}`,
-        );
-        return result;
     }
-    console.log(
-        `No relevant group title found for person ${person.domainIdentifier}`,
-    );
     return "";
 }
 
@@ -148,14 +148,16 @@ export async function getGenderedGroupName(
         `/persons/${person.domainIdentifier}`,
     );
 
-    const masterdata =
-        await churchtoolsClient.get<PersonMasterData>("/person/masterdata");
-    if (!masterdata.sexes) {
+    if (!masterdataCache) {
+        masterdataCache =
+            await churchtoolsClient.get<PersonMasterData>("/person/masterdata");
+    }
+    if (!masterdataCache.sexes) {
         console.warn("No gender masterdata accessible");
         return groupName;
     }
 
-    const genderMap = masterdata.sexes.reduce(
+    const genderMap = masterdataCache.sexes.reduce(
         (map, obj) => {
             map[obj.id] = obj.name;
             return map;
@@ -171,6 +173,6 @@ export async function getGenderedGroupName(
         groupName = [firstGendered, ...parts.slice(1)].join(" ");
     }
 
-    console.log(`Gendered group name as: ${groupName}`);
+    //console.log(`Gendered group name as: ${groupName}`);
     return groupName;
 }

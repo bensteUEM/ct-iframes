@@ -231,11 +231,11 @@ async function getNextEvents(
     const events = await churchtoolsClient.get<Event[]>(
         `/events?include=eventServices`,
     );
-    console.log(
+    /*console.log(
         "Fetched events from CT:",
         //events[0].calendar!.domainIdentifier,
         //calendarIds.includes(Number(events[0].calendar!.domainIdentifier)),
-    );
+    );*/
     let filteredEvents: Event[] = events.filter((event) => {
         // Filter by calendar IDs if provided
         if (
@@ -249,7 +249,7 @@ async function getNextEvents(
     let limitedEvents: Event[] = filteredEvents.slice(0, limit);
 
     console.log(
-        "Retrieved events:", //, limitedEvents
+        `Got next ${limitedEvents.length} events`, //, limitedEvents
     );
     return limitedEvents;
 }

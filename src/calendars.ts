@@ -75,7 +75,7 @@ export async function generateCalendarTitleReplacement(
 ): Promise<string> {
     const text = name.toUpperCase() + note.toUpperCase();
 
-    console.log("Generating title appendix for:", text);
+    //console.log("Generating title appendix for:", text);
 
     const knownKeywords = [
         "Abendmahl",

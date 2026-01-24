@@ -32,10 +32,11 @@ export async function getResourceNames(
         BookingCalculatedWithIncludes[]
     >(`/bookings?query=${appointmentTitle}${fromToParam}${resourceIdsParam}`);
 
-    console.log(
+    /*console.log(
         `Bookings for appointment=${appointmentTitle} on ${fromToParam} fetched:`,
         bookings,
     );
+    */
 
     const resourceIds = bookings.map((b) => b.booking.base.resourceId);
 
@@ -48,7 +49,7 @@ export async function getResourceNames(
     const resources = resourcesMaster.resources
         .filter((r) => resourceIds.includes(r.id))
         .map((r) => r.nameTranslated);
-    console.log("Resources fetched:", resources);
+    //console.log("Resources fetched:", resources);
 
     return resources;
 }
